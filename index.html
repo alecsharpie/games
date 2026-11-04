@@ -171,6 +171,7 @@
   }
 
   .more {
+    grid-column: span 2;
     display: flex; flex-direction: column; justify-content: flex-end; gap: 10px;
     border-radius: var(--radius);
     border: 1px dashed var(--faint);
@@ -214,7 +215,7 @@
     .feature::after { display: none; }
     .feature .cap { position: static; flex-direction: column; align-items: flex-start; padding: 20px 20px 22px; }
     .gallery { grid-template-columns: 1fr; }
-    .tile.wide { grid-column: auto; }
+    .tile.wide, .more { grid-column: auto; }
     .gallery.worlds { grid-template-columns: 1fr; }
     .tile.full .frame { aspect-ratio: 16 / 10; }
     .bar { flex-direction: column; align-items: flex-start; gap: 8px; }
@@ -243,7 +244,7 @@
     <img src="shots/lurching-llama.jpg" alt="Lurching Llama: llamas wobbling through an alpine obstacle course">
     <div class="cap">
       <div>
-        <span class="eyebrow">Newest · Oct 2026</span>
+        <span class="eyebrow">Featured · Oct 2026</span>
         <h2>Lurching Llama</h2>
         <p id="feature-desc">Steer a very top-heavy llama through spinning sweepers, swinging hammers and tipping see-saws, racing seven bot llamas to the finish.</p>
       </div>
@@ -252,7 +253,7 @@
   </a>
 
   <div class="bar" id="games">
-    <h3>Games<span>8</span></h3>
+    <h3>Games<span>10</span></h3>
     <p>Things with a score, a clock or someone to beat.</p>
   </div>
   <section class="gallery" id="games-grid"></section>
@@ -272,10 +273,12 @@
 <script>
   // [slug, name, month, caption, tags, size]
   const games = [
+    ["little-guys", "Little Guys", "Nov 2026", "Tiny pixel gardeners defend six veggie beds from waves of hungry bugs. The TV is the garden and every phone is a joystick and a rake.", ["Up to 8", "Phones"], "wide"],
+    ["finger-frolic", "Finger Frolic", "Nov 2026", "Wizards on a castle wall. Swipe arrows and draw runes on your phone to blast the monsters marching down your lane.", ["Up to 8", "Phones"]],
     ["bilbanan", "Not Bilbanan", "Oct 2026", "A remake of the old Swedish slot-car game. Snap together a track, then race the cockatoo, easing off the throttle so you don't fly off the corners.", ["2 players", "Gamepad"]],
     ["jumpingjack", "Jumping Jack", "Oct 2026", "EyeToy-style party games where your webcam is the controller. Punch ninjas, pop bubbles and race through jumping jacks.", ["Webcam", "Party"]],
-    ["co-op", "Co-op", "Oct 2026", "The TV is the board and each player's phone is their hand. Plan in secret, reveal together and talk it through to win.", ["2 players", "Phones"]],
     ["age-up", "Age Up", "Oct 2026", "Gather, build and advance through the ages in a real-time strategy skirmish against AI rivals or friends over peer-to-peer.", ["RTS", "Multiplayer"], "wide"],
+    ["co-op", "Co-op", "Oct 2026", "The TV is the board and each player's phone is their hand. Plan in secret, reveal together and talk it through to win.", ["2 players", "Phones"]],
     ["endo", "ENDO!", "Oct 2026", "BMX freestyle with only a front brake. Chain wheelies, endos and 180s into combos before the two-minute clock runs out.", ["WebGL", "Arcade"]],
     ["cards", "Cards", "Sep 2026", "A physics card table. Slide, flick and flip a full deck, or shuffle, scatter and deal with one click.", ["Physics"]],
     ["inkhold", "Inkhold", "Aug 2026", "A hand-inked tower-defence deck-builder. Raise a walled city card by card, then hold the line as the horde pours in.", ["Strategy", "Cards"]],
