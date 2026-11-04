@@ -116,14 +116,10 @@
   }
   .bar h3 { margin: 0; font: 400 2rem/1 "Instrument Serif", serif; }
   .bar h3 span { font: 400 .9rem Geist, sans-serif; color: var(--muted); margin-left: 8px; vertical-align: middle; }
-  .chips { display: flex; gap: 6px; padding: 4px; background: var(--surface); border-radius: 999px; }
-  .chips button {
-    font: 500 .88rem Geist, sans-serif; color: var(--muted);
-    background: none; border: 0; padding: 8px 16px; border-radius: 999px; cursor: pointer;
-    transition: color .2s, background .2s;
-  }
-  .chips button:hover { color: var(--ink); }
-  .chips button[aria-pressed="true"] { background: var(--ink); color: #111; }
+  .bar p { margin: 0; color: var(--muted); font-size: .95rem; }
+  .gallery.worlds { grid-template-columns: repeat(2, 1fr); }
+  .tile.full { grid-column: 1 / -1; }
+  .tile.full .frame { aspect-ratio: 21 / 9; }
 
   /* Gallery */
   .gallery {
@@ -135,7 +131,6 @@
   }
   .tile { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
   .tile.wide { grid-column: span 2; grid-row: span 2; }
-  .tile[hidden] { display: none; }
   .tile .frame {
     position: relative; overflow: hidden;
     border-radius: var(--radius);
@@ -176,7 +171,6 @@
   }
 
   .more {
-    grid-column: span 2;
     display: flex; flex-direction: column; justify-content: flex-end; gap: 10px;
     border-radius: var(--radius);
     border: 1px dashed var(--faint);
@@ -187,7 +181,6 @@
   .more:hover { border-color: var(--muted); background: var(--surface); }
   .more strong { font: 400 clamp(1.8rem, 3vw, 2.6rem)/1 "Instrument Serif", serif; }
   .more span { color: var(--muted); max-width: 44ch; }
-  .more[hidden] { display: none; }
 
   footer {
     display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap;
@@ -221,7 +214,10 @@
     .feature::after { display: none; }
     .feature .cap { position: static; flex-direction: column; align-items: flex-start; padding: 20px 20px 22px; }
     .gallery { grid-template-columns: 1fr; }
-    .tile.wide, .more { grid-column: auto; }
+    .tile.wide { grid-column: auto; }
+    .gallery.worlds { grid-template-columns: 1fr; }
+    .tile.full .frame { aspect-ratio: 16 / 10; }
+    .bar { flex-direction: column; align-items: flex-start; gap: 8px; }
     .tile.wide .frame { aspect-ratio: 16 / 10; height: auto; }
     .tile .play { opacity: 1; transform: none; }
   }
@@ -232,7 +228,8 @@
   <header class="top">
     <a class="me" href="https://www.alecsharpie.me">Alec Sharpie</a>
     <nav>
-      <a class="hide-sm" href="#all">Gallery</a>
+      <a class="hide-sm" href="#games">Games</a>
+      <a class="hide-sm" href="#worlds">Little worlds</a>
       <a href="https://github.com/alecsharpie">GitHub</a>
     </nav>
   </header>
@@ -254,16 +251,17 @@
     </div>
   </a>
 
-  <div class="bar" id="all">
-    <h3>Everything<span id="count"></span></h3>
-    <div class="chips" role="group" aria-label="Filter">
-      <button type="button" data-f="all" aria-pressed="true">All</button>
-      <button type="button" data-f="game" aria-pressed="false">Games</button>
-      <button type="button" data-f="toy" aria-pressed="false">Toys &amp; worlds</button>
-    </div>
+  <div class="bar" id="games">
+    <h3>Games<span>8</span></h3>
+    <p>Things with a score, a clock or someone to beat.</p>
   </div>
+  <section class="gallery" id="games-grid"></section>
 
-  <main class="gallery" id="gallery"></main>
+  <div class="bar" id="worlds">
+    <h3>Little worlds<span>5</span></h3>
+    <p>Simulations and toys to watch, poke at and get lost in.</p>
+  </div>
+  <section class="gallery worlds" id="worlds-grid"></section>
 
   <footer>
     <span>Made with Claude, 2026. Jumping Jack screenshot uses <a href="https://commons.wikimedia.org/wiki/File:Jumping_jack_movimiento.ogg">“Jumping jack movimiento”</a> by Albaparejadelrio, CC BY-SA 3.0.</span>
@@ -272,28 +270,29 @@
 </div>
 
 <script>
-  // [slug, name, kind, month, caption, tags, wide]
-  const items = [
-    ["picnic-ant-raid", "Picnic Ant Raid", "toy", "Oct 2026", "Hundreds of ants swarm an unattended picnic, tear the fruit apart chunk by chunk and haul it home.", ["3D", "Physics"], true],
-    ["bilbanan", "Not Bilbanan", "game", "Oct 2026", "A remake of the old Swedish slot-car game. Snap together a track, then race the cockatoo, easing off the throttle so you don't fly off the corners.", ["2 players", "Gamepad"], false],
-    ["jumpingjack", "Jumping Jack", "game", "Oct 2026", "EyeToy-style party games where your webcam is the controller. Punch ninjas, pop bubbles and race through jumping jacks.", ["Webcam", "Party"], false],
-    ["co-op", "Co-op", "game", "Oct 2026", "The TV is the board and each player's phone is their hand. Plan in secret, reveal together and talk it through to win.", ["2 players", "Phones"], false],
-    ["age-up", "Age Up", "game", "Oct 2026", "Gather, build and advance through the ages in a real-time strategy skirmish against AI rivals or friends over peer-to-peer.", ["RTS", "Multiplayer"], true],
-    ["endo", "ENDO!", "game", "Oct 2026", "BMX freestyle with only a front brake. Chain wheelies, endos and 180s into combos before the two-minute clock runs out.", ["WebGL", "Arcade"], false],
-    ["inside-the-cell", "Inside the Cell", "toy", "Sep 2026", "Spin, zoom and click into animal, plant and bacterial cells in 3D, with fact-checked notes on every organelle.", ["3D", "Learn"], false],
-    ["cards", "Cards", "game", "Sep 2026", "A physics card table. Slide, flick and flip a full deck, or shuffle, scatter and deal with one click.", ["Physics"], false],
-    ["inkhold", "Inkhold", "game", "Aug 2026", "A hand-inked tower-defence deck-builder. Raise a walled city card by card, then hold the line as the horde pours in.", ["Strategy", "Cards"], false],
-    ["courtyard", "The Courtyard", "toy", "Aug 2026", "A cellular-automata town that grows itself. Gardens bloom, the canal runs and townsfolk go about their day, season after season.", ["Simulation"], false],
-    ["solvista", "Solvista", "toy", "Jul 2026", "A hex-city diorama that grows from 1974 farmland into towers, monorails and a busy beachfront. Each load builds a different city.", ["Generative"], true],
-    ["wayword", "Wayword", "game", "Jul 2026", "A daily walk from one word to another, one related step at a time, judged by a tiny language model running in your browser.", ["Daily", "Words"], false],
-    ["koi-kanban", "Koi Kanban", "toy", "Jul 2026", "A kanban board that is a living koi pond. Every task is a fish you drag between pools; size is priority and colour is category.", ["Productivity"], false],
+  // [slug, name, month, caption, tags, size]
+  const games = [
+    ["bilbanan", "Not Bilbanan", "Oct 2026", "A remake of the old Swedish slot-car game. Snap together a track, then race the cockatoo, easing off the throttle so you don't fly off the corners.", ["2 players", "Gamepad"]],
+    ["jumpingjack", "Jumping Jack", "Oct 2026", "EyeToy-style party games where your webcam is the controller. Punch ninjas, pop bubbles and race through jumping jacks.", ["Webcam", "Party"]],
+    ["co-op", "Co-op", "Oct 2026", "The TV is the board and each player's phone is their hand. Plan in secret, reveal together and talk it through to win.", ["2 players", "Phones"]],
+    ["age-up", "Age Up", "Oct 2026", "Gather, build and advance through the ages in a real-time strategy skirmish against AI rivals or friends over peer-to-peer.", ["RTS", "Multiplayer"], "wide"],
+    ["endo", "ENDO!", "Oct 2026", "BMX freestyle with only a front brake. Chain wheelies, endos and 180s into combos before the two-minute clock runs out.", ["WebGL", "Arcade"]],
+    ["cards", "Cards", "Sep 2026", "A physics card table. Slide, flick and flip a full deck, or shuffle, scatter and deal with one click.", ["Physics"]],
+    ["inkhold", "Inkhold", "Aug 2026", "A hand-inked tower-defence deck-builder. Raise a walled city card by card, then hold the line as the horde pours in.", ["Strategy", "Cards"]],
+    ["wayword", "Wayword", "Jul 2026", "A daily walk from one word to another, one related step at a time, judged by a tiny language model running in your browser.", ["Daily", "Words"]],
+  ];
+  const worlds = [
+    ["picnic-ant-raid", "Picnic Ant Raid", "Oct 2026", "Hundreds of ants swarm an unattended picnic, tear the fruit apart chunk by chunk and haul it home.", ["3D", "Physics"], "full"],
+    ["inside-the-cell", "Inside the Cell", "Sep 2026", "Spin, zoom and click into animal, plant and bacterial cells in 3D, with fact-checked notes on every organelle.", ["3D", "Learn"]],
+    ["courtyard", "The Courtyard", "Aug 2026", "A cellular-automata town that grows itself. Gardens bloom, the canal runs and townsfolk go about their day, season after season.", ["Simulation"]],
+    ["solvista", "Solvista", "Jul 2026", "A hex-city diorama that grows from 1974 farmland into towers, monorails and a busy beachfront. Each load builds a different city.", ["Generative"]],
+    ["koi-kanban", "Koi Kanban", "Jul 2026", "A kanban board that is a living koi pond. Every task is a fish you drag between pools; size is priority and colour is category.", ["Productivity"]],
   ];
 
-  const gallery = document.getElementById("gallery");
-  gallery.innerHTML = items.map(([slug, name, kind, when, desc, tags, wide], i) => `
-    <a class="tile${wide ? " wide" : ""}" data-kind="${kind}" href="../${slug}/" style="--i:${i}">
+  const tile = ([slug, name, when, desc, tags, size], i) => `
+    <a class="tile${size ? " " + size : ""}" href="../${slug}/" style="--i:${i}">
       <div class="frame">
-        <img loading="${i < 4 ? "eager" : "lazy"}" decoding="async" src="shots/${slug}.jpg" alt="Screenshot of ${name}">
+        <img loading="${i < 3 ? "eager" : "lazy"}" decoding="async" src="shots/${slug}.jpg" alt="Screenshot of ${name}">
         <span class="play">Play →</span>
       </div>
       <div class="text">
@@ -304,25 +303,14 @@
         </div>
         <span class="when">${when}</span>
       </div>
-    </a>`).join("");
+    </a>`;
 
-  gallery.insertAdjacentHTML("beforeend", `
+  document.getElementById("games-grid").innerHTML = games.map(tile).join("") + `
     <a class="more" href="https://github.com/alecsharpie?tab=repositories">
       <strong>More experiments →</strong>
-      <span>Source for everything here, plus sketches and tools that never became games, is on GitHub.</span>
-    </a>`);
-  const more = gallery.lastElementChild;
-  const tiles = [...gallery.querySelectorAll(".tile")];
-  const count = document.getElementById("count");
-  const setFilter = f => {
-    let n = 0;
-    tiles.forEach(t => { const show = f === "all" || t.dataset.kind === f; t.hidden = !show; n += show; });
-    count.textContent = n;
-    more.hidden = f !== "all";
-    document.querySelectorAll(".chips button").forEach(b => b.setAttribute("aria-pressed", b.dataset.f === f));
-  };
-  document.querySelectorAll(".chips button").forEach(b => b.addEventListener("click", () => setFilter(b.dataset.f)));
-  setFilter("all");
+      <span>Source for everything here, plus sketches that never became games, is on GitHub.</span>
+    </a>`;
+  document.getElementById("worlds-grid").innerHTML = worlds.map(tile).join("");
 </script>
 </body>
 </html>
