@@ -63,6 +63,8 @@
   }
   h1 em { color: var(--accent); }
   .intro p { margin: 0; max-width: 34ch; color: var(--muted); font-size: 1.02rem; }
+  .hover-hint { display: none; }
+  @media (hover: hover) and (pointer: fine) { .hover-hint { display: inline; } }
 
   /* Featured */
   .feature {
@@ -73,11 +75,13 @@
     background: var(--surface);
     isolation: isolate;
   }
-  .feature img {
+  .feature .media { position: absolute; inset: 0; }
+  .feature img, .feature video {
     width: 100%; height: 100%; object-fit: cover;
-    transition: transform 1.2s cubic-bezier(.2,.7,.2,1);
+    transition: transform 1.2s cubic-bezier(.2,.7,.2,1), opacity .5s;
   }
-  .feature:hover img { transform: scale(1.025); }
+  .feature video { position: absolute; inset: 0; }
+  .feature:hover img, .feature:hover video { transform: scale(1.025); }
   .feature::after {
     content: ""; position: absolute; inset: 0; z-index: 1;
     background: linear-gradient(to top, rgba(8,8,9,.88) 0%, rgba(8,8,9,.35) 32%, rgba(8,8,9,0) 58%);
@@ -139,10 +143,13 @@
     box-shadow: inset 0 0 0 1px rgba(255,255,255,.06);
   }
   .tile.wide .frame { aspect-ratio: auto; min-height: 0; }
-  .tile .frame img {
+  .tile .frame img, .tile .frame video {
     width: 100%; height: 100%; object-fit: cover;
-    transition: transform .9s cubic-bezier(.2,.7,.2,1), filter .4s;
+    transition: transform .9s cubic-bezier(.2,.7,.2,1), opacity .35s;
   }
+  .tile .frame video { position: absolute; inset: 0; }
+  video.loop { opacity: 0; }
+  video.loop.on { opacity: 1; }
   .tile .frame::after {
     content: ""; position: absolute; inset: 0; border-radius: inherit;
     box-shadow: inset 0 0 0 1px rgba(255,255,255,.07);
@@ -157,7 +164,7 @@
     opacity: 0; transform: translateY(6px);
     transition: opacity .25s, transform .25s;
   }
-  .tile:hover .frame img { transform: scale(1.04); }
+  .tile:hover .frame img, .tile:hover .frame video { transform: scale(1.04); }
   .tile:hover .play, .tile:focus-within .play { opacity: 1; transform: none; }
   .tile.wide { display: grid; grid-template-rows: 1fr auto; }
   .tile .text { display: flex; justify-content: space-between; gap: 18px; align-items: baseline; }
@@ -211,7 +218,7 @@
     .top nav a.hide-sm { display: none; }
     .intro { flex-direction: column; align-items: flex-start; gap: 18px; }
     .feature { aspect-ratio: auto; }
-    .feature img { aspect-ratio: 16 / 11; height: auto; }
+    .feature .media { position: relative; aspect-ratio: 16 / 11; }
     .feature::after { display: none; }
     .feature .cap { position: static; flex-direction: column; align-items: flex-start; padding: 20px 20px 22px; }
     .gallery { grid-template-columns: 1fr; }
@@ -237,11 +244,14 @@
 
   <section class="intro">
     <h1>Things to <em>play.</em></h1>
-    <p>Games, toys and little worlds, all made for the browser. No installs or accounts: click one and it opens in a tab.</p>
+    <p>Games, toys and little worlds, all made for the browser. No installs or accounts: click one and it opens in a tab.<span class="hover-hint"> Hover over any of them to watch it play.</span></p>
   </section>
 
   <a class="feature" id="feature" href="../lurching-llama/">
-    <img src="shots/lurching-llama.jpg" alt="Lurching Llama: llamas wobbling through an alpine obstacle course">
+    <div class="media">
+      <img src="shots/lurching-llama.jpg" alt="Lurching Llama: llamas wobbling through an alpine obstacle course">
+      <video class="loop" muted playsinline loop preload="none" data-src="clips/lurching-llama.mp4" aria-hidden="true"></video>
+    </div>
     <div class="cap">
       <div>
         <span class="eyebrow">Featured · Oct 2026</span>
@@ -296,6 +306,7 @@
     <a class="tile${size ? " " + size : ""}" href="../${slug}/" style="--i:${i}">
       <div class="frame">
         <img loading="${i < 3 ? "eager" : "lazy"}" decoding="async" src="shots/${slug}.jpg" alt="Screenshot of ${name}">
+        <video class="loop" muted playsinline loop preload="none" data-src="clips/${slug}.mp4" aria-hidden="true"></video>
         <span class="play">Play →</span>
       </div>
       <div class="text">
@@ -314,6 +325,45 @@
       <span>Source for everything here, plus sketches that never became games, is on GitHub.</span>
     </a>`;
   document.getElementById("worlds-grid").innerHTML = worlds.map(tile).join("");
+
+  // Moving tiles: each screenshot has a short silent gameplay loop behind it.
+  // Mouse: play on hover or keyboard focus. Touch: play the tile most in view.
+  // Skipped entirely for reduced motion or data saver.
+  const calm = matchMedia("(prefers-reduced-motion: reduce)").matches || navigator.connection?.saveData;
+  const canHover = matchMedia("(hover: hover) and (pointer: fine)").matches;
+  const start = v => {
+    if (!v.isConnected) return;
+    if (!v.src) v.src = v.dataset.src;
+    v.play().catch(() => {});
+  };
+  const stop = v => { v.classList.remove("on"); v.pause(); };
+  const loops = [...document.querySelectorAll("video.loop")];
+  loops.forEach(v => {
+    v.addEventListener("playing", () => v.classList.add("on"));
+    v.addEventListener("error", () => v.remove());
+  });
+
+  if (!calm) {
+    // The hero plays whenever it's on screen.
+    const hero = document.querySelector(".feature video");
+    if (hero) new IntersectionObserver(([e]) => e.isIntersecting ? start(hero) : stop(hero)).observe(hero);
+
+    const tileLoops = loops.filter(v => v !== hero);
+    if (canHover) {
+      tileLoops.forEach(v => {
+        const t = v.closest(".tile");
+        t.addEventListener("pointerenter", () => start(v));
+        t.addEventListener("pointerleave", () => stop(v));
+        t.addEventListener("focus", () => start(v));
+        t.addEventListener("blur", () => stop(v));
+      });
+    } else {
+      // Touch: whichever tile crosses the middle of the screen plays; the rest rest.
+      const io = new IntersectionObserver(entries => entries.forEach(e => e.isIntersecting ? start(e.target) : stop(e.target)),
+        { rootMargin: "-45% 0px -45% 0px" });
+      tileLoops.forEach(v => io.observe(v));
+    }
+  }
 </script>
 </body>
 </html>
