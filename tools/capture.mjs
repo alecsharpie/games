@@ -37,7 +37,7 @@ try {
     // Stepped (frame-exact, stutter-free) by default; clip.realtime for games that the virtual clock can't drive.
     await (c.realtime ? record : recordStepped)(page, { out: raw, seconds: c.seconds, clip: c.crop, width: c.width || 720, ...(c.substeps ? { substeps: c.substeps } : {}),
       ...(c.beforeFrame ? { beforeFrame: i => c.beforeFrame(page, i) } : {}) });
-    if (c.crossfade) crossfade(raw, dest, c.fade || 0.6); else fs.copyFileSync(raw, dest);
+    if (c.crossfade) crossfade(raw, dest, c.fade || 0.6, c.transition); else fs.copyFileSync(raw, dest);
     if (!has('--raw')) fs.rmSync(raw);
     sheet(dest, path.join(out, `${slug}-sheet.png`));
     console.log(`check: .out/${slug}-sheet.png`);

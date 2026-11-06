@@ -10,8 +10,8 @@
 // Stepped clip: the boat and floes glide with CSS transitions, which the virtual clock doesn't drive, so beforeClip
 // wraps __vclock.step to pin every CSS animation to game time. The sail is sent from the navigator's phone page at
 // frame 0 (so both ends of the loop read "Sailing…"), and beforeFrame waits for the board to pick it up so it lands on game time.
-// No crossfade (text-heavy board), so the loop seam is a cut from the harbour back to the start: smooth.mjs measures
-// it at ~2.45 against a 2.5 limit. If a change to the game tips it over, end the clip a little earlier.
+// The loop wraps with a quick dip through dark (transition 'fadeblack'), not a dissolve: a dissolve shows two boats and
+// two toasts at once, and a plain cut from the harbour back to the start is too big a jump for smooth.mjs.
 import { SITE } from '../lib.mjs';
 
 const B = `${SITE}/co-op/lighthouse/`, ROOM = 'SHOTL';
@@ -94,7 +94,7 @@ export default {
   },
   shot: { quality: 82 },
   clip: {
-    seconds: 3.25, crossfade: false,   // the "Home safe" card pops at 3.3s
+    seconds: 3.25, crossfade: true, fade: 0.5, transition: 'fadeblack',   // the "Home safe" card pops at 3.3s
     async beforeFrame(board, i) {
       if (i !== 0) return;
       await sail();

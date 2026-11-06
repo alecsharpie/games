@@ -138,14 +138,17 @@ export async function recordStepped(page, { out, seconds = 4, clip = null, width
 }
 
 // Seamless loop: the last `fade` seconds dissolve into the first, so the clip has no visible jump.
-// Output is about (input length - fade). Skip this for text-heavy games (the dissolve looks ghosted).
-export function crossfade(src, out, fade = 0.6) {
-  const L = duration(src), off = (L - 2 * fade - 0.05).toFixed(3);
-  if (L < 2 * fade + 1) throw new Error(`${src} is too short (${L}s) to crossfade`);
+// Output is about (input length - fade). For text-heavy games the dissolve looks ghosted: either skip it, or use
+// transition 'fadeblack', a quick dip through black that never shows both ends at once (see co-op).
+export function crossfade(src, out, fade = 0.6, transition = 'fade') {
+  // fadeblack is still a little dark on its last frame, so let it finish a few frames before the loop wraps.
+  const F = fade + (transition === 'fade' ? 0 : 0.1);
+  const L = duration(src), off = (L - F - fade - 0.05).toFixed(3);
+  if (L < 2 * F + 1) throw new Error(`${src} is too short (${L}s) to crossfade`);
   const tmp = out.replace(/\.mp4$/, '.tmp.mp4');
   ff(['-i', src, '-i', src, '-filter_complex',
-    `[0]trim=start=${fade},setpts=PTS-STARTPTS,fps=30,settb=1/30[a];[1]trim=end=${fade},setpts=PTS-STARTPTS,fps=30,settb=1/30[b];` +
-    `[a][b]xfade=transition=fade:duration=${fade}:offset=${off},format=yuv420p[v]`, '-map', '[v]', ...H264, tmp]);
+    `[0]trim=start=${F},setpts=PTS-STARTPTS,fps=30,settb=1/30[a];[1]trim=end=${F},setpts=PTS-STARTPTS,fps=30,settb=1/30[b];` +
+    `[a][b]xfade=transition=${transition}:duration=${fade}:offset=${off},format=yuv420p[v]`, '-map', '[v]', ...H264, tmp]);
   fs.renameSync(tmp, out); // only replace the real clip once ffmpeg succeeded
   console.log(`looped ${path.relative(ROOT, out)}: ${duration(out).toFixed(2)}s, ${kb(out)}`);
 }
