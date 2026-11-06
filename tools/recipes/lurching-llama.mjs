@@ -1,5 +1,5 @@
 // Lurching Llama (hero): Quick Race, the pack of 8 llamas on the first spinning-sweeper platform.
-// Still: fast-forward with the game's window.__game.advance() test hook to race time ~6.5s.
+// Still: fast-forward with the game's window.__game.advance() test hook to race time ~6.5s, then freeze the clock.
 // Clip: reload and race for real (hold W) so the loop shows real-time motion from ~4s to ~8s.
 import { SITE } from '../lib.mjs';
 
@@ -21,7 +21,10 @@ export default {
     await hideKeys(page);
     await page.evaluate(() => window.__game.advance(4.4, () => ({ x: 0, z: 1, moveLen: 1, jump: false, jumpHeld: false, duck: false })));
     await page.evaluate(() => window.__game.advance(0.5, t => ({ x: 0, z: 1, moveLen: 1, jump: (t % 1.5) < 0.05, jumpHeld: (t % 1.5) < 0.4, duck: false })));
-    await page.waitForTimeout(1200);
+    // Freeze the clock and render a few frames on game time: the altiplano scenery renders slowly, and on real time
+    // the race runs on (with the player standing still) while the screenshot waits for a frame.
+    await page.evaluate(() => { window.__vclock.freeze(); for (let i = 0; i < 6; i++) window.__vclock.step(1000 / 60); });
+    await page.waitForTimeout(1500);
   },
   async beforeClip(page) {
     if (shot) { await page.goto(URL, { waitUntil: 'load' }); await page.waitForFunction(() => window.__game); await page.waitForTimeout(2000); }

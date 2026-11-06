@@ -10,7 +10,7 @@ export const CLIPS = path.join(ROOT, 'clips');
 export const SITE = 'https://www.alecsharpie.me';
 
 const which = bin => ['/opt/homebrew/bin/', '/usr/local/bin/', '/usr/bin/'].map(d => d + bin).find(fs.existsSync) || bin;
-export const FFMPEG = which('ffmpeg'), FFPROBE = which('ffprobe');
+export const FFMPEG = which('ffmpeg'), FFPROBE = which('ffprobe'), CWEBP = which('cwebp');
 const ff = args => execFileSync(FFMPEG, ['-y', '-loglevel', 'error', ...args]);
 const H264 = ['-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-crf', '30', '-preset', 'veryslow', '-profile:v', 'high', '-movflags', '+faststart', '-an'];
 
@@ -30,12 +30,12 @@ export async function shoot(page, out, { clip = null, quality = 86 } = {}) {
 }
 
 // The page shows <slug>-960.webp in normal tiles and <slug>-1600.webp in wide tiles and the hero (srcset);
-// the JPEG is the master and the og:image.
+// the JPEG is the master and the og:image. Encoded with cwebp (brew install webp): Homebrew's ffmpeg dropped libwebp.
 export const WEBP_WIDTHS = [960, 1600];
 export function webps(jpg) {
   for (const w of WEBP_WIDTHS) {
     const out = jpg.replace(/\.jpg$/, `-${w}.webp`);
-    ff(['-i', jpg, '-vf', `scale=${w}:-2:flags=lanczos`, '-c:v', 'libwebp', '-quality', '80', out]);
+    execFileSync(CWEBP, ['-quiet', '-q', '80', '-m', '6', '-resize', String(w), '0', jpg, '-o', out]);
     console.log(`  ${path.relative(ROOT, out)}: ${kb(out)}`);
   }
 }
