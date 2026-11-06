@@ -61,6 +61,7 @@ To fix a hole, add or remove a `wide` or `full` tile, or move one. Don't add fil
 
 ## Environment gotchas
 
+- The WebPs are made with `cwebp` (`brew install webp`), because Homebrew's ffmpeg no longer includes libwebp.
 - `cp` and `mv` are aliased to interactive mode here, so use `/bin/cp -f` and `/bin/mv -f`.
 - SSH push to GitHub can fail with "Permission denied (publickey)". `tools/deploy.sh` falls back to HTTPS with `gh` credentials.
 - Playwright: `tools/node_modules` should hold a playwright install. Either run `cd tools && npm install`, or symlink `~/.claude/skills/screenshot-verify/node_modules`. Real Chrome (`channel: 'chrome'`) is needed to play H.264; bundled Chromium can't.
