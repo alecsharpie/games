@@ -105,13 +105,15 @@ export const VCLOCK = () => {
 
 // Stutter-free recording: freeze the page's clock, then render and screenshot one frame per 1/fps of game time.
 // `substeps` runs extra animation frames between captured ones (games tuned for 60Hz behave better at 2).
-export async function recordStepped(page, { out, seconds = 4, clip = null, width = 960, fps = 30, substeps = 2 }) {
+// `beforeFrame(i)` runs before each frame is stepped, e.g. to feed the game a camera frame that matches game time.
+export async function recordStepped(page, { out, seconds = 4, clip = null, width = 960, fps = 30, substeps = 2, beforeFrame = null }) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'loop-'));
   const cdp = await page.context().newCDPSession(page);
   await page.evaluate(() => window.__vclock.freeze());
   const n = Math.round(seconds * fps), dt = 1000 / fps / substeps;
   const t0 = Date.now();
   for (let i = 0; i < n; i++) {
+    if (beforeFrame) await beforeFrame(i);
     await page.evaluate(([dt, k]) => { for (let j = 0; j < k; j++) window.__vclock.step(dt); }, [dt, substeps]);
     const { data } = await cdp.send('Page.captureScreenshot', { format: 'jpeg', quality: 92, ...(clip ? { clip: { ...clip, scale: 1 } } : {}) });
     fs.writeFileSync(path.join(dir, `f${String(i).padStart(5, '0')}.jpg`), Buffer.from(data, 'base64'));

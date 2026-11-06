@@ -56,7 +56,7 @@ To fix a hole, add or remove a `wide` or `full` tile, or move one. Don't add fil
 
 **Credits:** third-party media that appears in a still or clip gets a credit in the footer.
 
-**Jumping Jack** draws the webcam image, so its capture is fed a video of a person through Chrome's fake camera (see its recipe). The source is the user's own recording, which is kept local and gitignored under `tools/assets/private/`.
+**Jumping Jack** draws the webcam image, so its capture fakes the camera with stock footage of a man doing star jumps (Pexels 7299359, credited in the footer). The recipe downloads and prepares it into `tools/assets/private/` (gitignored), and seeks it frame by frame during the stepped clip so the footage stays in sync with game time.
 
 ## Environment gotchas
 
