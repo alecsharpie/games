@@ -4,7 +4,7 @@
 // including the wrap from the last frame back to the first, which is what a viewer sees when the loop restarts.
 // Flags:
 //   freeze — a frame identical to the previous one while the rest of the clip is moving (a dropped/duplicated frame)
-//   jump   — a frame change far bigger than the clip's typical motion (a hitch, a cut, or a bad loop seam)
+//   jump   — after a freeze, a catch-up frame far bigger than the clip's typical motion (a hitch), or a big change at the loop seam
 // Exits 1 if anything is flagged.
 import fs from 'node:fs'; import path from 'node:path'; import { execFileSync } from 'node:child_process';
 import { CLIPS, FFMPEG } from './lib.mjs';
@@ -28,8 +28,10 @@ export function analyse(mp4) {
   const issues = [];
   d.forEach((x, i) => {
     const t = (i / 30).toFixed(2), where = i === 0 ? 'loop seam' : `${t}s (frame ${i})`;
-    // in a mostly static clip (word games, boards) a discrete UI change is content, not a hitch: only judge the seam
-    if ((moving || i === 0) && x > Math.max(3 * typical, typical + 2.5)) issues.push(`jump at ${where}: ${x.toFixed(1)} vs typical ${typical.toFixed(2)}`);
+    // A capture hitch looks like frozen frames followed by a catch-up jump. A big change straight after a moving frame
+    // is content (a hit flash, a word landing, a cut in the game), so only jumps after a freeze, or at the seam, count.
+    const afterFreeze = i > 0 && d[i - 1] < 0.02 && moving;
+    if ((i === 0 || afterFreeze) && x > Math.max(3 * typical, typical + 2.5)) issues.push(`jump at ${where}: ${x.toFixed(1)} vs typical ${typical.toFixed(2)}`);
     else if (moving && i > 0 && x < 0.02) issues.push(`freeze at ${where}`);
   });
   return { frames: n, typical, seam: d[0], issues };
