@@ -285,7 +285,7 @@
   const games = [
     ["little-guys", "Little Guys", "Nov 2026", "Tiny pixel gardeners defend six veggie beds from waves of hungry bugs. The TV is the garden and every phone is a joystick and a rake.", ["Up to 8", "Phones"], "wide"],
     ["finger-frolic", "Finger Frolic", "Nov 2026", "Wizards on a castle wall. Swipe arrows and draw runes on your phone to blast the monsters marching down your lane.", ["Up to 8", "Phones"]],
-    ["bilbanan", "Not Bilbanan", "Oct 2026", "A remake of the old Swedish slot-car game. Snap together a track, then race the cockatoo, easing off the throttle so you don't fly off the corners.", ["2 players", "Gamepad"]],
+    ["bilbanan", "Not Bilbanan", "Oct 2026", "A remake of the old Swedish slot-car game. Snap together a track, then race the cockatoo and up to three friends, each holding their phone as a throttle.", ["Up to 4", "Phones"]],
     ["jumpingjack", "Jumping Jack", "Oct 2026", "EyeToy-style party games where your webcam is the controller. Punch ninjas, pop bubbles and race through jumping jacks.", ["Webcam", "Party"]],
     ["age-up", "Age Up", "Oct 2026", "Gather, build and advance through the ages in a real-time strategy skirmish against AI rivals or friends over peer-to-peer.", ["RTS", "Multiplayer"], "wide"],
     ["co-op", "Co-op", "Oct 2026", "The TV is the board and each player's phone is their hand. Plan in secret, reveal together and talk it through to win.", ["2 players", "Phones"]],
@@ -295,7 +295,7 @@
     ["wayword", "Wayword", "Jul 2026", "A daily walk from one word to another, one related step at a time, judged by a tiny language model running in your browser.", ["Daily", "Words"]],
   ];
   const worlds = [
-    ["picnic-ant-raid", "Picnic Ant Raid", "Oct 2026", "Hundreds of ants swarm an unattended picnic, tear the fruit apart chunk by chunk and haul it home.", ["3D", "Physics"], "full"],
+    ["picnic-ant-raid", "Picnic Ant Raid", "Oct 2026", "A colony raids an unattended picnic. Scouts find a way into the fruit, then the crowd works the wound, drinking the juice and carrying fragments home.", ["3D", "Physics"], "full"],
     ["inside-the-cell", "Inside the Cell", "Sep 2026", "Spin, zoom and click into animal, plant and bacterial cells in 3D, with fact-checked notes on every organelle.", ["3D", "Learn"]],
     ["courtyard", "The Courtyard", "Aug 2026", "A cellular-automata town that grows itself. Gardens bloom, the canal runs and townsfolk go about their day, season after season.", ["Simulation"]],
     ["solvista", "Solvista", "Jul 2026", "A hex-city diorama that grows from 1974 farmland into towers, monorails and a busy beachfront. Each load builds a different city.", ["Generative"]],
@@ -325,6 +325,8 @@
       <span>Source for everything here, plus sketches that never became games, is on GitHub.</span>
     </a>`;
   document.getElementById("worlds-grid").innerHTML = worlds.map(tile).join("");
+  document.querySelector("#games h3 span").textContent = games.length;
+  document.querySelector("#worlds h3 span").textContent = worlds.length;
 
   // Moving tiles: each screenshot has a short silent gameplay loop behind it.
   // Mouse: play on hover or keyboard focus. Touch: play the tile most in view.

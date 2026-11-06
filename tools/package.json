@@ -1,0 +1,9 @@
+{
+  "name": "games-gallery-tools",
+  "private": true,
+  "type": "module",
+  "description": "Capture stills and gameplay loops for the games gallery, check the page, deploy.",
+  "dependencies": {
+    "playwright": "^1.49.0"
+  }
+}
