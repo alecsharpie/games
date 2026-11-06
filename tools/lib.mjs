@@ -12,7 +12,7 @@ export const SITE = 'https://www.alecsharpie.me';
 const which = bin => ['/opt/homebrew/bin/', '/usr/local/bin/', '/usr/bin/'].map(d => d + bin).find(fs.existsSync) || bin;
 export const FFMPEG = which('ffmpeg'), FFPROBE = which('ffprobe');
 const ff = args => execFileSync(FFMPEG, ['-y', '-loglevel', 'error', ...args]);
-const H264 = ['-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-crf', '27', '-preset', 'slow', '-profile:v', 'high', '-movflags', '+faststart', '-an'];
+const H264 = ['-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-crf', '30', '-preset', 'veryslow', '-profile:v', 'high', '-movflags', '+faststart', '-an'];
 
 // Real GPU WebGL on macOS; headless SwiftShader is too slow for most of these games.
 export const GPU_ARGS = ['--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist', '--autoplay-policy=no-user-gesture-required',
@@ -22,15 +22,27 @@ export const launch = (opts = {}) => chromium.launch({ ...opts, args: [...GPU_AR
 export const duration = mp4 => +execFileSync(FFPROBE, ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', mp4]).toString().trim();
 const kb = f => `${(fs.statSync(f).size / 1024).toFixed(0)} KB`;
 
-// Gallery still: viewport JPEG (1600x1000 for most games, 1600x900 for TV party games).
+// Gallery still: viewport JPEG (1600x1000 for most games, 1600x900 for TV party games), plus the WebPs the page serves.
 export async function shoot(page, out, { clip = null, quality = 86 } = {}) {
   await page.screenshot({ path: out, type: 'jpeg', quality, ...(clip ? { clip } : {}) });
   console.log(`still ${path.relative(ROOT, out)}: ${kb(out)}`);
+  webps(out);
+}
+
+// The page shows <slug>-960.webp in normal tiles and <slug>-1600.webp in wide tiles and the hero (srcset);
+// the JPEG is the master and the og:image.
+export const WEBP_WIDTHS = [960, 1600];
+export function webps(jpg) {
+  for (const w of WEBP_WIDTHS) {
+    const out = jpg.replace(/\.jpg$/, `-${w}.webp`);
+    ff(['-i', jpg, '-vf', `scale=${w}:-2:flags=lanczos`, '-c:v', 'libwebp', '-quality', '80', out]);
+    console.log(`  ${path.relative(ROOT, out)}: ${kb(out)}`);
+  }
 }
 
 // Record `seconds` of the page via CDP screencast (~60fps on GPU) to a silent H.264 mp4, scaled to `width`.
 // clip: optional {x,y,width,height} in CSS px to crop to.
-export async function record(page, { out, seconds = 4, clip = null, width = 960 }) {
+export async function record(page, { out, seconds = 4, clip = null, width = 720 }) {
   const cdp = await page.context().newCDPSession(page);
   const frames = [];
   cdp.on('Page.screencastFrame', f => {
@@ -106,7 +118,7 @@ export const VCLOCK = () => {
 // Stutter-free recording: freeze the page's clock, then render and screenshot one frame per 1/fps of game time.
 // `substeps` runs extra animation frames between captured ones (games tuned for 60Hz behave better at 2).
 // `beforeFrame(i)` runs before each frame is stepped, e.g. to feed the game a camera frame that matches game time.
-export async function recordStepped(page, { out, seconds = 4, clip = null, width = 960, fps = 30, substeps = 2, beforeFrame = null }) {
+export async function recordStepped(page, { out, seconds = 4, clip = null, width = 720, fps = 30, substeps = 2, beforeFrame = null }) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'loop-'));
   const cdp = await page.context().newCDPSession(page);
   await page.evaluate(() => window.__vclock.freeze());

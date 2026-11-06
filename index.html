@@ -14,7 +14,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
-<link rel="preload" as="image" href="shots/lurching-llama.jpg">
+<link rel="preload" as="image" href="shots/lurching-llama-1600.webp" imagesrcset="shots/lurching-llama-960.webp 960w, shots/lurching-llama-1600.webp 1600w" imagesizes="min(100vw, 1360px)" fetchpriority="high">
 <style>
   :root {
     --bg: #0e0e0f;
@@ -62,9 +62,6 @@
     letter-spacing: -0.02em;
   }
   h1 em { color: var(--accent); }
-  .intro p { margin: 0; max-width: 34ch; color: var(--muted); font-size: 1.02rem; }
-  .hover-hint { display: none; }
-  @media (hover: hover) and (pointer: fine) { .hover-hint { display: inline; } }
 
   /* Featured */
   .feature {
@@ -244,12 +241,11 @@
 
   <section class="intro">
     <h1>Things to <em>play.</em></h1>
-    <p>Games, toys and little worlds, all made for the browser. No installs or accounts: click one and it opens in a tab.<span class="hover-hint"> Hover over any of them to watch it play.</span></p>
   </section>
 
   <a class="feature" id="feature" href="../lurching-llama/">
     <div class="media">
-      <img src="shots/lurching-llama.jpg" alt="Lurching Llama: llamas wobbling through an alpine obstacle course">
+      <img src="shots/lurching-llama-1600.webp" srcset="shots/lurching-llama-960.webp 960w, shots/lurching-llama-1600.webp 1600w" sizes="min(100vw, 1360px)" fetchpriority="high" alt="Lurching Llama: llamas wobbling through an alpine obstacle course">
       <video class="loop" muted playsinline loop preload="none" data-src="clips/lurching-llama.mp4" aria-hidden="true"></video>
     </div>
     <div class="cap">
@@ -302,10 +298,18 @@
     ["koi-kanban", "Koi Kanban", "Jul 2026", "A kanban board that is a living koi pond. Every task is a fish you drag between pools; size is priority and colour is category.", ["Productivity"]],
   ];
 
-  const tile = ([slug, name, when, desc, tags, size], i) => `
+  // How wide each tile's image shows, so the browser picks the 960 or 1600px still (see the grid CSS).
+  const sizes = {
+    games: "(max-width: 680px) 100vw, (max-width: 1000px) 50vw, 440px",
+    "games wide": "(max-width: 1000px) 100vw, 900px",
+    worlds: "(max-width: 680px) 100vw, 670px",
+    "worlds full": "min(100vw, 1360px)",
+  };
+  const tile = section => ([slug, name, when, desc, tags, size], i) => `
     <a class="tile${size ? " " + size : ""}" href="../${slug}/" style="--i:${i}">
       <div class="frame">
-        <img loading="${i < 3 ? "eager" : "lazy"}" decoding="async" src="shots/${slug}.jpg" alt="Screenshot of ${name}">
+        <img loading="${i < 3 ? "eager" : "lazy"}" decoding="async" src="shots/${slug}-960.webp"
+          srcset="shots/${slug}-960.webp 960w, shots/${slug}-1600.webp 1600w" sizes="${sizes[size ? section + " " + size : section]}" alt="Screenshot of ${name}">
         <video class="loop" muted playsinline loop preload="none" data-src="clips/${slug}.mp4" aria-hidden="true"></video>
         <span class="play">Play →</span>
       </div>
@@ -319,12 +323,12 @@
       </div>
     </a>`;
 
-  document.getElementById("games-grid").innerHTML = games.map(tile).join("") + `
+  document.getElementById("games-grid").innerHTML = games.map(tile("games")).join("") + `
     <a class="more" href="https://github.com/alecsharpie?tab=repositories">
       <strong>More experiments →</strong>
       <span>Source for everything here, plus sketches that never became games, is on GitHub.</span>
     </a>`;
-  document.getElementById("worlds-grid").innerHTML = worlds.map(tile).join("");
+  document.getElementById("worlds-grid").innerHTML = worlds.map(tile("worlds")).join("");
   document.querySelector("#games h3 span").textContent = games.length;
   document.querySelector("#worlds h3 span").textContent = worlds.length;
 
@@ -345,7 +349,10 @@
     v.addEventListener("error", () => v.remove());
   });
 
-  if (!calm) {
+  // Wait for the stills before fetching any video, so the loops never slow the first paint.
+  const afterLoad = f => document.readyState === "complete" ? f() : addEventListener("load", f, { once: true });
+
+  if (!calm) afterLoad(() => {
     // The hero plays whenever it's on screen.
     const hero = document.querySelector(".feature video");
     if (hero) new IntersectionObserver(([e]) => e.isIntersecting ? start(hero) : stop(hero)).observe(hero);
@@ -365,7 +372,30 @@
         { rootMargin: "-45% 0px -45% 0px" });
       tileLoops.forEach(v => io.observe(v));
     }
-  }
+
+    // Mouse: quietly download the loops of tiles near the screen, one at a time, so a hover starts instantly.
+    if (canHover) {
+      const queue = [];
+      let busy = false;
+      const pump = () => {
+        if (busy || !queue.length) return;
+        const v = queue.shift();
+        if (v.src || !v.isConnected) return pump();
+        busy = true;
+        let fired = false;
+        const done = () => { if (fired) return; fired = true; busy = false; pump(); };
+        v.addEventListener("canplaythrough", done, { once: true });
+        v.addEventListener("error", done, { once: true });
+        setTimeout(done, 10000);
+        v.preload = "auto";
+        v.src = v.dataset.src;
+      };
+      const near = new IntersectionObserver(entries => entries.forEach(e => {
+        if (e.isIntersecting) { near.unobserve(e.target); queue.push(e.target); pump(); }
+      }), { rootMargin: "300px 0px" });
+      tileLoops.forEach(v => near.observe(v));
+    }
+  });
 </script>
 </body>
 </html>

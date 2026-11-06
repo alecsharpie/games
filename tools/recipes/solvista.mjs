@@ -1,7 +1,7 @@
 // Solvista: seed 1 grown to ~2024, every card hidden, zoomed 1.5x on the downtown towers, monorail,
 // beach and Ferris-wheel pier. The loop runs at 2x so the city visibly grows, with a slow ~60px camera
 // drift; season and time of day are pinned with the page's __setYear/__setTime hooks so the light
-// doesn't shift during the clip. Heavy scene: captures at ~28 fps, so it's encoded at 800px.
+// doesn't shift during the clip. Heavy scene.
 import { SITE } from '../lib.mjs';
 
 export default {
@@ -24,5 +24,5 @@ export default {
     });
   },
   shot: { quality: 82 },
-  clip: { seconds: 4.5, crossfade: true, width: 800 },
+  clip: { seconds: 4.8, crossfade: true, fade: 1 },   // a long dissolve: the dense city makes a short one read as a jump
 };

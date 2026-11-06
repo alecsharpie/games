@@ -9,7 +9,7 @@ Use the project skills for changes:
 ## Layout
 
 The whole site is `index.html`, a single file with no build step.
-- `shots/<slug>.jpg` is the gallery still for each game.
+- `shots/<slug>.jpg` is the master still for each game (and the og:image). The page serves `shots/<slug>-960.webp` and `-1600.webp` from it via `srcset`; `capture.mjs` makes them, and `webps()` in `tools/lib.mjs` remakes them after any manual edit to a JPEG.
 - `clips/<slug>.mp4` is its hover loop.
 - `tools/` holds the capture, check and deploy scripts, plus one recipe per game in `tools/recipes/`.
 - `.out/` is scratch output and is gitignored.
@@ -45,10 +45,11 @@ To fix a hole, add or remove a `wide` or `full` tile, or move one. Don't add fil
 
 **Content:** show real gameplay at its busiest, most legible moment. Never show menus, title cards, hint overlays, debug panels or cursors.
 
-**Stills:** 1600×1000 JPEG. TV party games are 1600×900.
+**Stills:** 1600×1000 JPEG, plus its two WebPs. TV party games are 1600×900.
 
 **Clips:**
-- About 3.5–4.5s, 960px wide, H.264 with no audio. Keep each under ~800 KB; together they're about 5 MB.
+- About 3.5–4.5s, H.264 (CRF 30) with no audio. They're 720px wide, except the hero and `wide`/`full` tiles, whose recipes set `clip: { width: 960 }`; change that when a tile changes size. Keep each under ~600 KB (`check.mjs` flags anything over 700 KB); together they're about 3 MB. GitHub Pages can be slow (we measured ~200 KB/s), and hover waits for the download, so size is speed.
+- The page fetches no video until the stills have loaded. On desktop it then pre-downloads the loops of tiles near the screen one at a time, so hovers start instantly.
 - They must be perfectly smooth: no dropped or frozen frames, no hitches and no jump where the loop restarts. `capture.mjs` records them **stepped** by default. It freezes the page's clock (`VCLOCK` in `tools/lib.mjs`) and renders exactly 1/30s of game time per frame, so GPU hiccups can't show. Use `clip: { realtime: true }` only for a game the virtual clock can't drive, such as logic in a Worker or CSS-animation-driven motion. `node tools/smooth.mjs` must pass, and `check.mjs` runs it.
 - Under the stepped clock, input sent from Node during a clip arrives on real time, not game time. To time input, call `window.__vclock.freeze()` in `beforeClip` and schedule it with in-page `setTimeout` (see `endo` and `cards`). The clock only steps the top window, so games in iframes must freeze each same-origin iframe's `__vclock` and forward `step()` into it (see `little-guys` and `finger-frolic`).
 - Crossfade them into seamless loops, except text- or UI-heavy games (Co-op, Wayword), where the dissolve looks ghosted. Many small fast-moving things also ghost during the dissolve: slow the game down (Picnic Ant Raid runs at 1×, not 2×) or shorten `clip.fade`.

@@ -25,5 +25,5 @@ export default {
     });
   },
   shot: { quality: 85 },
-  clip: { seconds: 4, crossfade: true },
+  clip: { seconds: 4, crossfade: true, width: 960 },   // wide tile
 };

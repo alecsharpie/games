@@ -8,7 +8,7 @@ export default {
   url: `${SITE}/bilbanan/`,
   async setup(page) {
     await page.waitForTimeout(2500);
-    await page.addStyleTag({ content: '#phones{display:none!important}' });
+    await page.addStyleTag({ content: '#phones,#full{display:none!important}' });
     await page.keyboard.press('Enter');             // the track is closed: open the hold-to-join lobby
     await page.waitForTimeout(300);
     for (const k of ['k', 'z', 'm']) await page.keyboard.down(k);

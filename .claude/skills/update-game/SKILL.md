@@ -17,7 +17,7 @@ Do this when the game changed, the shot is weak, or the user wants a different m
 2. Judge `shots/<slug>.jpg` and `.out/<slug>-sheet.png` with the Read tool against the bar in `CLAUDE.md`, and run `node tools/smooth.mjs <slug>`, which must pass. Compare with the old version from `git show HEAD:shots/<slug>.jpg > .out/old.jpg`, and keep whichever is better.
 3. If the recipe no longer works, fix the recipe rather than doing a one-off script, so the next refresh works too. This happens when the game's UI, hooks or URL changed. Keep the comments at the top of the recipe current with anything flaky.
 
-To refresh everything, loop over `tools/recipes/*.mjs`, skipping `_template`, then review every result before committing. Some randomness means a few will be worse than before; restore those with `git checkout -- shots/<slug>.jpg clips/<slug>.mp4`.
+To refresh everything, loop over `tools/recipes/*.mjs`, skipping `_template`, then review every result before committing. Some randomness means a few will be worse than before; restore those with `git checkout -- 'shots/<slug>*' clips/<slug>.mp4`.
 
 ## Change the copy
 
@@ -29,18 +29,19 @@ This covers the caption, tags, month and name.
 ## Move, reorder or resize
 
 - To move a game between sections, cut the entry from one array into the other, keeping the newest-first order.
+- A tile that becomes (or stops being) `wide`, `full` or the hero needs its recipe's `clip.width` changed (960 for big tiles, default 720 otherwise) and a re-recorded clip.
 - Any add, remove, move or resize can unbalance the grids. Rebalance with `wide` or `full` according to `CLAUDE.md`, and confirm with `node tools/check.mjs`.
 
 ## Change the featured hero
 
-- Edit the `a.feature` block in `index.html`: the href, the image `src` and alt text, the video `data-src`, the eyebrow (`Featured · <Mon YYYY>`), the h2 and the description.
-- Also update the `og:image` meta and the `<link rel="preload">` at the top.
+- Edit the `a.feature` block in `index.html`: the href, the image `src`, `srcset` and alt text, the video `data-src`, the eyebrow (`Featured · <Mon YYYY>`), the h2 and the description.
+- Also update the `og:image` meta and the `<link rel="preload">` at the top (its `href` and `imagesrcset`). The new hero's clip should be re-recorded at `clip: { width: 960 }`.
 - The old hero needs a tile in its array if it should stay on the page. The new hero should normally come out of its array so it doesn't appear twice; `check.mjs` flags duplicates.
 - The hero shows at 16/7.2 on desktop and crops the still. Check that the subject sits in the middle band in `.out/check-1440.png`.
 
 ## Remove a game
 
-- Delete the array entry, `shots/<slug>.jpg`, `clips/<slug>.mp4` and `tools/recipes/<slug>.mjs`. Remove any footer credit that only it needed. Rebalance the grid.
+- Delete the array entry, `shots/<slug>.jpg` and its WebPs, `clips/<slug>.mp4` and `tools/recipes/<slug>.mjs`. Remove any footer credit that only it needed. Rebalance the grid.
 - Don't delete the game's own repo or turn off its Pages unless the user explicitly asks.
 
 ## Check and ship

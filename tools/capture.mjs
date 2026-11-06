@@ -35,7 +35,7 @@ try {
     if (r.beforeClip) await r.beforeClip(page);
     const raw = path.join(out, `${slug}-raw.mp4`), dest = path.join(CLIPS, `${slug}.mp4`);
     // Stepped (frame-exact, stutter-free) by default; clip.realtime for games that the virtual clock can't drive.
-    await (c.realtime ? record : recordStepped)(page, { out: raw, seconds: c.seconds, clip: c.crop, width: c.width || 960, ...(c.substeps ? { substeps: c.substeps } : {}),
+    await (c.realtime ? record : recordStepped)(page, { out: raw, seconds: c.seconds, clip: c.crop, width: c.width || 720, ...(c.substeps ? { substeps: c.substeps } : {}),
       ...(c.beforeFrame ? { beforeFrame: i => c.beforeFrame(page, i) } : {}) });
     if (c.crossfade) crossfade(raw, dest, c.fade || 0.6); else fs.copyFileSync(raw, dest);
     if (!has('--raw')) fs.rmSync(raw);

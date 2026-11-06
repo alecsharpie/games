@@ -1,6 +1,6 @@
 // Check the gallery before deploying.
 //   node tools/check.mjs [--live]
-// - every tile and the hero have shots/<slug>.jpg and clips/<slug>.mp4; no orphan files
+// - every tile and the hero have shots/<slug>.jpg, its -960/-1600 WebPs and clips/<slug>.mp4; no orphan files
 // - renders at 1440 / 900 / 390px: no page errors, no horizontal scroll, every grid row filled
 // - every clip is smooth: no dropped/frozen frames, no hitches, no jump at the loop seam (tools/smooth.mjs)
 // - every clip actually plays (real Chrome, since bundled Chromium has no H.264)
@@ -8,14 +8,14 @@
 // Screenshots land in .out/check-<width>.png — look at them with the Read tool.
 import fs from 'node:fs'; import path from 'node:path'; import http from 'node:http';
 import { chromium } from 'playwright';
-import { ROOT, SHOTS, CLIPS, SITE } from './lib.mjs';
+import { ROOT, SHOTS, CLIPS, SITE, WEBP_WIDTHS } from './lib.mjs';
 import { analyse } from './smooth.mjs';
 
 const problems = [], warn = m => { problems.push(m); console.log('  ✗ ' + m); }, ok = m => console.log('  ✓ ' + m);
 const out = path.join(ROOT, '.out'); fs.mkdirSync(out, { recursive: true });
 
 // Serve the repo as /games/ so the ../<slug>/ links resolve like on the real site.
-const types = { '.html': 'text/html', '.jpg': 'image/jpeg', '.mp4': 'video/mp4', '.png': 'image/png', '.svg': 'image/svg+xml' };
+const types = { '.html': 'text/html', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.mp4': 'video/mp4', '.png': 'image/png', '.svg': 'image/svg+xml' };
 const server = http.createServer((req, res) => {
   const u = decodeURIComponent(new URL(req.url, 'http://x').pathname);
   if (!u.startsWith('/games/')) { res.writeHead(404).end(); return; }
@@ -42,15 +42,19 @@ try {
   const errors = []; page.on('pageerror', e => errors.push(e.message));
   await page.goto(url, { waitUntil: 'load' });
   const slugs = await page.$$eval('a.feature, a.tile', as => as.map(a => a.getAttribute('href').replace(/^\.\.\/|\/$/g, '')));
-  const missing = slugs.flatMap(s => [`shots/${s}.jpg`, `clips/${s}.mp4`].filter(f => !fs.existsSync(path.join(ROOT, f))));
-  missing.length ? missing.forEach(f => warn(`missing ${f}`)) : ok(`${slugs.length} entries, all with a still and a clip`);
-  const orphans = [...fs.readdirSync(SHOTS), ...fs.readdirSync(CLIPS)].filter(f => !f.startsWith('.') && !slugs.includes(f.replace(/\.(jpg|mp4)$/, '')));
+  const files = s => [`shots/${s}.jpg`, ...WEBP_WIDTHS.map(w => `shots/${s}-${w}.webp`), `clips/${s}.mp4`];
+  const missing = slugs.flatMap(s => files(s).filter(f => !fs.existsSync(path.join(ROOT, f))));
+  missing.length ? missing.forEach(f => warn(`missing ${f}`)) : ok(`${slugs.length} entries, all with a still, its WebPs and a clip`);
+  const mtime = f => fs.statSync(path.join(ROOT, f)).mtimeMs;
+  const stale = slugs.flatMap(s => files(s).filter(f => f.endsWith('.webp') && fs.existsSync(path.join(ROOT, f)) && mtime(f) < mtime(`shots/${s}.jpg`)));
+  stale.forEach(f => warn(`${f} is older than its JPEG (regenerate with webps() in tools/lib.mjs)`));
+  const orphans = [...fs.readdirSync(SHOTS), ...fs.readdirSync(CLIPS)].filter(f => !f.startsWith('.') && !slugs.includes(f.replace(/(-\d+)?\.(jpg|webp|mp4)$/, '')));
   orphans.length ? orphans.forEach(f => warn(`orphan file ${f} (no tile uses it)`)) : ok('no orphan files');
   const dupes = slugs.filter((s, i) => slugs.indexOf(s) !== i);
   dupes.forEach(s => warn(`${s} appears twice`));
   for (const f of fs.readdirSync(CLIPS).filter(f => f.endsWith('.mp4'))) {
     const kb = fs.statSync(path.join(CLIPS, f)).size / 1024;
-    if (kb > 1200) warn(`clips/${f} is ${kb.toFixed(0)} KB (keep loops under ~800 KB)`);
+    if (kb > 700) warn(`clips/${f} is ${kb.toFixed(0)} KB (keep loops under ~600 KB)`);
   }
 
   console.log('Clips smooth');

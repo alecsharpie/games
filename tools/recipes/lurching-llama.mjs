@@ -33,5 +33,5 @@ export default {
     await page.waitForFunction(() => window.__game.game.raceT > 4.1, null, { timeout: 15000 });
   },
   shot: { quality: 82 },
-  clip: { seconds: 4, crossfade: true },
+  clip: { seconds: 4, crossfade: true, width: 960 },   // the featured hero
 };

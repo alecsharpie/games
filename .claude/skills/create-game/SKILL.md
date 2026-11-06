@@ -40,7 +40,7 @@ The user's spelling may be off, so match loosely. For example, "finger-folic" me
    - Is the loop smooth? `node tools/smooth.mjs <slug>` must pass.
    
    Iterate on the recipe until all of these pass; it usually takes several tries. To pick a better moment without recapturing, use `--raw` with `trim()` from `tools/lib.mjs`.
-4. Clips should stay under ~800 KB. If one is too big, shorten it or crop with `clip.crop`.
+4. Clips should stay under ~600 KB. If one is too big, shorten it, slow the game down or crop with `clip.crop`. If the tile is `wide` or `full`, set `clip: { width: 960 }` in the recipe.
 5. If the still or clip shows third-party media, add a credit to the footer.
 
 ## 4. Check and ship

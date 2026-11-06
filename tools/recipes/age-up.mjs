@@ -17,5 +17,5 @@ export default {
     await page.waitForTimeout(1500);
   },
   shot: { quality: 82 },
-  clip: { seconds: 4, crossfade: true },
+  clip: { seconds: 4, crossfade: true, width: 960 },   // wide tile
 };

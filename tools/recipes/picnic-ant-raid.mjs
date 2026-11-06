@@ -44,5 +44,5 @@ export default {
     await page.waitForTimeout(300);
   },
   shot: {},
-  clip: { seconds: 4.6, crossfade: true, fade: 0.5 },
+  clip: { seconds: 4.6, crossfade: true, fade: 0.5, width: 960 },   // full-width tile
 };
