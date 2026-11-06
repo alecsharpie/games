@@ -1,13 +1,15 @@
-// Picnic Ant Raid: the colony swarming an orange by the nest, ants in the trail behind it, the picnic cloth around.
-// Uses the game's window.__sim test hooks: fast-forward ~5 min of simulation (eating is slow and realistic now: scouts
-// first, then a crowd working one wound), find the fruit with the most biting ants and frame it from the picnic side.
-// The clip plays at 1x: at 2x, hundreds of small fast ants ghost visibly in the loop's crossfade. ?seed makes the layout repeatable, but the run
-// isn't fully deterministic, so the camera follows whichever fruit is busiest (20+ ants biting) rather than a fixed spot.
+// Picnic Ant Raid: a small crowd of ants (~12-20) working into a watermelon slice, more on the way.
+// Uses the game's window.__sim test hooks. The picnic's own watermelons sit at the far end of the cloth and the
+// colony never reaches them, so the recipe drops a slice nearer the nest (the player's "drop fruit" action) a few
+// seconds in, fast-forwards until the first scouts have brought a modest crowd (not the late-game swarm), and frames it.
+// The clip plays at 1x: at 2x, small fast ants ghost visibly in the loop's crossfade. ?seed makes the layout repeatable,
+// but the run isn't fully deterministic, so the recipe waits for the crowd rather than a fixed time.
 // Capture the still and clip together (no --shot/--clip) so they show the same moment.
 import { SITE } from '../lib.mjs';
 
-const T = 320;                        // seconds of sim time to fast-forward
-const CAM = [-15, 9, 15];             // camera offset from the fruit
+const MELON = [50, 38];              // where the slice is dropped (between the picnic and the nest)
+const CROWD = [12, 22];              // biting ants wanted on it
+const CAM = [-15, 11, 15];           // camera offset from the slice's middle
 
 export default {
   url: `${SITE}/picnic-ant-raid/?seed=3`,
@@ -15,28 +17,22 @@ export default {
     await page.waitForFunction(() => window.__sim);
     await page.addStyleTag({ content: '#hud,#hint{display:none!important}' });
     await page.waitForTimeout(1500);
-    await page.evaluate(T => { __sim.pause(); while (__sim.t < T) __sim.step(5); }, T);
-    // keep going (up to ~4 more minutes) until some fruit has a real crowd on it
-    const n = await page.evaluate(cam => {
-      const busiest = () => {
-        const { ants, fruits } = __sim.internals;
-        const biting = ants.filter(a => a.alive && a.state === 'bite');
-        let best = null;
-        for (const f of fruits) {
-          if (!f.alive) continue;
-          const q = f.body.position, n = biting.filter(a => Math.hypot(a.pos.x - q.x, a.pos.z - q.z) < 6).length;
-          if (!best || n > best.n) best = { n, q };
-        }
-        return best;
-      };
-      let best = busiest();
-      for (let i = 0; i < 48 && best.n < 20; i++) { __sim.step(5); best = busiest(); }
-      const { q } = best;
-      __sim.look(q.x + cam[0], q.y + cam[1], q.z + cam[2], q.x, q.y - 0.5, q.z);
+    const n = await page.evaluate(([melon, crowd, cam]) => {
+      __sim.pause(); __sim.step(3);
+      __sim.drop('watermelon', ...melon);
+      const { ants, fruits, THREE } = __sim.internals;
+      const slice = () => fruits.filter(f => f.alive && f.kind === 'watermelon').sort((a, b) =>
+        Math.hypot(a.body.position.x - melon[0], a.body.position.z - melon[1]) - Math.hypot(b.body.position.x - melon[0], b.body.position.z - melon[1]))[0];
+      const biting = f => { const q = f.body.position; return ants.filter(a => a.alive && a.state === 'bite' && Math.hypot(a.pos.x - q.x, a.pos.z - q.z) < 13).length; };
+      __sim.step(25);
+      let f = slice(), n = biting(f);
+      for (let i = 0; i < 60 && !(n >= crowd[0] && n <= crowd[1]); i++) { __sim.step(1); f = slice(); n = biting(f); }
+      const c = new THREE.Box3().setFromObject(f.mesh).getCenter(new THREE.Vector3());
+      __sim.look(c.x + cam[0], c.y + cam[1], c.z + cam[2], c.x, c.y - 0.5, c.z);
       __sim.step(0.05);
-      return best.n;
-    }, CAM);
-    console.log(`framing a fruit with ${n} ants biting`);
+      return n;
+    }, [MELON, CROWD, CAM]);
+    console.log(`framing the watermelon with ${n} ants biting`);
     await page.waitForTimeout(500);
   },
   async beforeClip(page) {
